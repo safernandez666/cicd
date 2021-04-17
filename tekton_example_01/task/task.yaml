@@ -10,9 +10,9 @@ spec:
         type: git
     params:
       - name: dockerfile
-        default: /workspace/src/Dockerfile
+        default: /workspace/app/app/Dockerfile
       - name: context
-        default: /workspace/src
+        default: /workspace/app/app
   outputs:
     resources:
       - name: builtImage
