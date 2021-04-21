@@ -1,19 +1,12 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: flaskapp
-  labels:
-    app: flaskapp
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flaskapp-deployment
-  namespace: flaskapp
+  namespace: safernandez666
   labels:
     app: flaskapp
 spec:
-  replicas: 3
+  replicas: 4
   selector:
     matchLabels:
       app: flaskapp
@@ -34,7 +27,7 @@ apiVersion: v1
 kind: Service
 metadata:  
   name: flaskapp-deployment
-  namespace: flaskapp
+  namespace: safernandez666
 spec:
   selector:
     app: flaskapp
