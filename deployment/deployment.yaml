@@ -6,7 +6,7 @@ metadata:
   labels:
     app: flaskapp
 spec:
-  replicas: 4
+  replicas: 2
   selector:
     matchLabels:
       app: flaskapp
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: flaskapp
-        image: safernandez666/app
+        image: safernandez666/app:latest
         ports:
         - containerPort: 80
         imagePullPolicy: "Always"
