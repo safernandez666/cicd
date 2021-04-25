@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   jenkins:
-    image: jenkins/jenkins:lts
+    image: safernandez666/jenkins
     privileged: true
     user: root
     ports:
@@ -36,6 +36,15 @@ services:
       - postgresql:/var/lib/postgresql
       # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
       - postgresql_data:/var/lib/postgresql/data
+  zap:
+    image: owasp/zap2docker-weekly
+    container_name: zap
+    ports:
+      - 8000:8000
+    # We start a ZAP daemon that can be connected to from other hosts. We will connect to this from Jenkins to run our scans
+    entrypoint: zap-x.sh -daemon -host 0.0.0.0 -port 8000 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true -config api.key=5364864132243598723485
+    volumes:
+      - ~/jenkins:/zap/reports/:rw 
 
 volumes:
   sonarqube_data:
@@ -44,3 +53,4 @@ volumes:
   sonarqube_temp:
   postgresql:
   postgresql_data:
+  reports:

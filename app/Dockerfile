@@ -1,6 +1,13 @@
 #Use the Python base image with Alpine Linux
 FROM python:alpine
 
+# Aqua Scanner
+RUN apk add --no-cache ca-certificates && update-ca-certificates
+ADD https://get.aquasec.com/microscanner .
+RUN chmod +x microscanner
+RUN ./microscanner YmU0OTAzNTRhNzdi
+
+
 #Set a default directory for application install
 WORKDIR /usr/src/app
 
