@@ -41,24 +41,47 @@ pipeline {
                 stage('SonarQube') {
                     steps {
                         echo "Analisis SonarQube"
-                        sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000 -Dsonar.projectName=04.DevSecOps -Dsonar.projectVersion=1.0 -Dsonar.projectKey=04.DevSecOps -Dsonar.sources=. -Dsonar.projectBaseDir=/var/jenkins_home/workspace/04.DevSecOps_Script/app -Dsonar.login=7159403361daf6cac6225fea1117f5f745ee4ce8"
+                        sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000 -Dsonar.projectKey=App -Dsonar.projectVersion=1.0 -Dsonar.sources=. -Dsonar.projectBaseDir=/var/jenkins_home/workspace/$JOB_NAME/app -Dsonar.login=08bfcbe158f1afdbb2bf3ff5744eeb6661e55798"
                         sleep(time:10,unit:"SECONDS")
                     }
                 }
             }
         }
-        stage ('Build & Push to DockerHub') {
+        stage ('Build Image') {
             steps {
                 sh """ 
                 cd app
                 docker build -t app .
                 docker tag app:latest safernandez666/app:latest
+                 """        // Shell build step
+             }
+        }
+        stage('Docker Analisys With Trivy AquaSec') {
+            steps { 
+                script {
+                    int code = sh returnStatus: true, script: """ trivy --exit-code 1 --severity CRITICAL,HIGH safernandez666/app """
+                    if(code==1) {
+                        currentBuild.result = 'FAILURE'
+                        error('El Docker posee Vulnerabilidades.')
+                        println "UNESTABLE"
+                    }
+                    else {
+                        currentBuild.result = 'SUCCESS' 
+                        println "El Docker no posee Vulnerabilidades."
+                        println "SUCCESS"
+                    }   
+                }         
+            }
+        }
+        stage ('Push To DockerHub') {
+            steps {
+                sh """ 
                 docker push safernandez666/app:latest
                 docker rmi app safernandez666/app 
                  """        // Shell build step
              }
-         }   
-         stage ('Deploy Over Kubernetes') {
+        }
+        stage ('Deploy Over Kubernetes') {
             steps {
                 kubernetesDeploy(kubeconfigId: 'Okteto',               // REQUIRED
 

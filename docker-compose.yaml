@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   jenkins:
-    image: safernandez666/jenkins
+    image: safernandez666/jenkins_safernandez666
     privileged: true
     user: root
     ports:
@@ -14,12 +14,12 @@ services:
   sonarqube:
     image: sonarqube:8.2-community
     depends_on:
-      - db
+      - db_sonar
     ports:
       - "9000:9000"
     container_name: sonarqube
     environment:
-      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+      SONAR_JDBC_URL: jdbc:postgresql://db_sonar:5432/sonar
       SONAR_JDBC_USERNAME: sonar
       SONAR_JDBC_PASSWORD: sonar
     volumes:
@@ -27,8 +27,9 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_temp:/opt/sonarqube/temp
-  db:
+  db_sonar:
     image: postgres
+    container_name: db_sonar
     environment:
       POSTGRES_USER: sonar
       POSTGRES_PASSWORD: sonar
@@ -45,7 +46,7 @@ services:
     entrypoint: zap-x.sh -daemon -host 0.0.0.0 -port 8000 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true -config api.key=5364864132243598723485
     volumes:
       - ~/jenkins:/zap/reports/:rw 
-
+      
 volumes:
   sonarqube_data:
   sonarqube_extensions:
