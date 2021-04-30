@@ -33,7 +33,7 @@ pipeline {
                 stage('Dependency Check') {
                     steps {
                         echo "Analisis de Dependencias"
-                        sh 'sh /opt/dependency-check/bin/dependency-check.sh --scan /var/jenkins_home/workspace/$JOB_NAME/app --format ALL'
+                        sh 'sh /opt/dependency-check/bin/dependency-check.sh --scan /var/jenkins_home/workspace/$JOB_NAME --format ALL'
                         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
                         sleep(time:5,unit:"SECONDS")
                     }
@@ -41,7 +41,7 @@ pipeline {
                 stage('SonarQube') {
                     steps {
                         echo "Analisis SonarQube"
-                        sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000 -Dsonar.projectKey=App -Dsonar.projectVersion=1.0 -Dsonar.sources=. -Dsonar.projectBaseDir=/var/jenkins_home/workspace/$JOB_NAME/app -Dsonar.login=08bfcbe158f1afdbb2bf3ff5744eeb6661e55798"
+                        sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000 -Dsonar.projectKey=04.DevSecOpsScript -Dsonar.projectVersion=1.0 -Dsonar.sources=app/. -Dsonar.projectBaseDir=/var/jenkins_home/workspace/$JOB_NAME -Dsonar.login=10909565dcd7e24d1ff04ab80cf83ca1a5e5abee"
                         sleep(time:10,unit:"SECONDS")
                     }
                 }
@@ -52,7 +52,8 @@ pipeline {
                 sh """ 
                 cd app
                 docker build -t app .
-                docker tag app:latest safernandez666/app:latest
+                docker tag app safernandez666/app:v1.$BUILD_ID
+                docker tag app safernandez666/app:latest
                  """        // Shell build step
              }
         }
@@ -77,7 +78,8 @@ pipeline {
             steps {
                 sh """ 
                 docker push safernandez666/app:latest
-                docker rmi app safernandez666/app 
+                docker push safernandez666/app:v1.$BUILD_ID
+                docker rmi app safernandez666/app:v1.$BUILD_ID safernandez666/app:latest
                  """        // Shell build step
              }
         }
@@ -86,7 +88,7 @@ pipeline {
                 kubernetesDeploy(kubeconfigId: 'Okteto',               // REQUIRED
 
                  configs: 'deployment/deployment.yaml', // REQUIRED
-                 enableConfigSubstitution: false,
+                 enableConfigSubstitution: true,
                  )
             }
         }
