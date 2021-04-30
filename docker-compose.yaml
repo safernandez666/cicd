@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.3'
 services:
   jenkins:
     image: safernandez666/jenkins_safernandez666
