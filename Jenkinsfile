@@ -16,7 +16,7 @@ pipeline {
                     steps { 
                         echo "Analisis Leaks"       
                         script {
-                            int code = sh returnStatus: true, script: """ gitleaks-linux-amd64 --repo-path=/var/jenkins_home/workspace/$JOB_NAME/ --pretty -v """
+                            int code = sh returnStatus: true, script: """ gitleaks --path=/var/jenkins_home/workspace/$JOB_NAME -v --leaks-exit-code=1 """
                             if(code==1) {
                                 currentBuild.result = 'FAILURE'
                                 error('Contraseñas en el Codigo.')
@@ -33,7 +33,7 @@ pipeline {
                 stage('Dependency Check') {
                     steps {
                         echo "Analisis de Dependencias"
-                        sh 'sh /opt/dependency-check/bin/dependency-check.sh --scan /var/jenkins_home/workspace/$JOB_NAME --format ALL'
+                        sh 'sh /opt/dependency-check/bin/dependency-check.sh --scan /var/jenkins_home/workspace/$JOB_NAME/app --format ALL -n'
                         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
                         sleep(time:5,unit:"SECONDS")
                     }
@@ -41,7 +41,7 @@ pipeline {
                 stage('SonarQube') {
                     steps {
                         echo "Analisis SonarQube"
-                        sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000 -Dsonar.projectKey=04.DevSecOpsScript -Dsonar.projectVersion=1.0 -Dsonar.sources=app/. -Dsonar.projectBaseDir=/var/jenkins_home/workspace/$JOB_NAME -Dsonar.login=10909565dcd7e24d1ff04ab80cf83ca1a5e5abee"
+                        sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://sonarqube:9000 -Dsonar.projectKey=App -Dsonar.projectVersion=1.0 -Dsonar.sources=. -Dsonar.projectBaseDir=/var/jenkins_home/workspace/$JOB_NAME/app -Dsonar.login=0d7ff4d672320acbb10209b897dcf4379b02bfc9"
                         sleep(time:10,unit:"SECONDS")
                     }
                 }
@@ -51,16 +51,16 @@ pipeline {
             steps {
                 sh """ 
                 cd app
-                docker build -t app .
-                docker tag app safernandez666/app:v1.$BUILD_ID
-                docker tag app safernandez666/app:latest
+                docker build -t app:v1.$BUILD_ID .
+                docker tag app:v1.$BUILD_ID safernandez666/app:v1.$BUILD_ID
+                docker tag app:v1.$BUILD_ID safernandez666/app:latest
                  """        // Shell build step
              }
         }
         stage('Docker Analisys With Trivy AquaSec') {
             steps { 
                 script {
-                    int code = sh returnStatus: true, script: """ trivy --exit-code 1 --severity CRITICAL,HIGH safernandez666/app """
+                    int code = sh returnStatus: true, script: """ trivy --exit-code 1 --severity CRITICAL,HIGH safernandez666/app:v1.$BUILD_ID """
                     if(code==1) {
                         currentBuild.result = 'FAILURE'
                         error('El Docker posee Vulnerabilidades.')
@@ -79,7 +79,7 @@ pipeline {
                 sh """ 
                 docker push safernandez666/app:latest
                 docker push safernandez666/app:v1.$BUILD_ID
-                docker rmi app safernandez666/app:v1.$BUILD_ID safernandez666/app:latest
+                docker rmi app:v1.$BUILD_ID safernandez666/app:latest
                  """        // Shell build step
              }
         }
@@ -88,7 +88,7 @@ pipeline {
                 kubernetesDeploy(kubeconfigId: 'Okteto',               // REQUIRED
 
                  configs: 'deployment/deployment.yaml', // REQUIRED
-                 enableConfigSubstitution: true,
+                 enableConfigSubstitution: true
                  )
             }
         }
@@ -98,7 +98,7 @@ pipeline {
                     //sh "docker exec zap zap-cli --verbose quick-scan http://pipeline.ironbox.com.ar:8090 -l Medium" 
                     try {
                         echo "Inicio de Scanneo Dinamico"
-                        sh "docker exec zap zap-cli --api-key 5364864132243598723485 --port 8000 --verbose quick-scan https://flaskapp-deployment-safernandez666.cloud.okteto.net/" 
+                        sh "docker exec zap zap-cli --api-key 5364864132243598723485 --port 8000 --verbose quick-scan https://flaskapp-deployment-safernandez666.cloud.okteto.net -l High"
                         //sh "docker exec zap zap-cli --verbose alerts --alert-level Medium -f json | jq length"
                         currentBuild.result = 'SUCCESS' 
                     }
